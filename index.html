@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=0"
+    />
+    <link rel="icon" href="/pop/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/pop/icon-192.png" />
+    <meta name="theme-color" content="#000000" id="themeColorMeta" />
+    <meta name="application-name" content="Pop-Up Text" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="#000000" />
+    <meta name="apple-mobile-web-app-title" content="Pop-Up Text" />
+    <meta name="msapplication-TileImage" content="/pop/icon-192.png" />
+    <meta name="msapplication-TileColor" content="#000000" />
+
+    <title>Pop-Up Text</title>
+
+    <link rel="stylesheet" href="/pop/style.css" />
+    <link rel="manifest" href="/pop/manifest.json" />
+  </head>
+
+  <body class="prevent-select">
+    <div class="app-container">
+      <div class="controls">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <img
+            src="/pop/icon-512.png"
+            alt="Logo"
+            style="width: 40px; height: 40px; padding: 3px"
+          />
+          <h1 class="cool-gradient" style="font-size: 30px; margin: 0">
+            Pop-Up Text
+          </h1>
+        </div>
+        <textarea
+          id="messageInput"
+          placeholder="Type your message..."
+        ></textarea>
+
+        <div class="row">
+          <label style="flex: 0 0 90px">Font Size</label>
+          <input type="range" id="fontSize" min="10" max="250" value="30" />
+        </div>
+
+        <div class="row">
+          <select id="fontFamily">
+            <option value="'Arial', sans-serif">Arial</option>
+            <option value="'Georgia', serif">Georgia</option>
+            <option value="'Courier New', monospace">Courier New</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+            <option value="'Lobster', cursive">Lobster</option>
+            <option value="'Pacifico', cursive">Pacifico</option>
+            <option value="'Playfair Display', serif">Playfair Display</option>
+            <option value="'Dancing Script', cursive">Dancing Script</option>
+            <option value="'Montserrat', sans-serif">Montserrat</option>
+            <option value="'Bebas Neue', cursive">Bebas Neue</option>
+            <option value="'Raleway', sans-serif">Raleway</option>
+            <option value="'Caveat', cursive">Caveat</option>
+            <option value="'Shadows Into Light', cursive">
+              Shadows Into Light
+            </option>
+            <option value="'Abril Fatface', cursive">Abril Fatface</option>
+          </select>
+
+          <label class="checkbox-label"
+            ><input type="checkbox" id="boldToggle" />Bold</label
+          >
+          <label class="checkbox-label"
+            ><input type="checkbox" id="italicToggle" />Italic</label
+          >
+        </div>
+
+        <div class="row">
+          <label class="color-label"
+            >Text Color<input type="color" id="textColor" value="#ffffff"
+          /></label>
+          <label class="checkbox-label"
+            ><input type="checkbox" id="gradientToggle" />Gradient</label
+          >
+          <label class="color-label"
+            >Background<input type="color" id="bgColor" value="#000000"
+          /></label>
+        </div>
+
+        <div class="row">
+          <button onclick="enterFullscreen()">Fullscreen</button>
+        </div>
+      </div>
+
+      <div id="messageDisplay">Your message will appear here.</div>
+    </div>
+    <script src="/pop/script.js"></script>
+  </body>
+</html>
