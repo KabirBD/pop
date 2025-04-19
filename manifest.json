@@ -12,12 +12,12 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/popicon-192.png",
+      "src": "/pop/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/popicon-512.png",
+      "src": "/pop/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
