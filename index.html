@@ -25,7 +25,8 @@
 
   <body class="prevent-select">
     <div class="app-container">
-      <div class="controls">
+      <!-- Controls Panel -->
+      <div class="controls" id="controlsPanel">
         <div style="display: flex; align-items: center; gap: 8px">
           <img
             src="/pop/icon-512.png"
@@ -36,6 +37,7 @@
             Pop-Up Text
           </h1>
         </div>
+
         <textarea
           id="messageInput"
           placeholder="Type your message..."
@@ -86,13 +88,18 @@
           /></label>
         </div>
 
-<div class="row">
-  <button onclick="enterFullscreen()">Fullscreen</button>
-  <button onclick="shareCurrentState()">Share</button>
-</div>
+        <div class="row">
+          <button onclick="enterFullscreen()">Fullscreen</button>
+          <button onclick="shareCurrentState()">Share</button>
+        </div>
+      </div>
 
-      <div id="messageDisplay">Your message will appear here.</div>
+      <!-- Output Section -->
+      <div id="messageDisplay" class="display">
+        Your message will appear here.
+      </div>
     </div>
+
     <script src="/pop/script.js"></script>
   </body>
 </html>
