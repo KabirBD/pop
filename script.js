@@ -116,13 +116,35 @@ function enterFullscreen() {
 }
 
 function shareCurrentState() {
-  const params = new URLSearchParams(window.location.search);
-  params.set("viewOnly", "1");
-  const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-  navigator.clipboard.writeText(shareUrl).then(() => {
-    alert("Link copied to clipboard!");
-  });
+  const state = {
+    text: messageInput.value,
+    fontSize: fontSize.value,
+    fontFamily: fontFamily.value,
+    bold: boldToggle.checked,
+    italic: italicToggle.checked,
+    textColor: textColor.value,
+    bgColor: bgColor.value,
+    gradient: gradientToggle.checked
+  };
+
+  const encoded = encodeURIComponent(btoa(JSON.stringify(state)));
+  const shareURL = `${location.origin}${location.pathname}?state=${encoded}&viewOnly=1`;
+
+  if (navigator.share) {
+    navigator
+      .share({
+        title: 'Pop-Up Text',
+        text: 'Check out this message!',
+        url: shareURL
+      })
+      .catch(err => console.warn('Share canceled or failed', err));
+  } else {
+    navigator.clipboard.writeText(shareURL).then(() => {
+      alert('Link copied to clipboard!');
+    });
+  }
 }
+
 
 function checkViewOnly() {
   const params = new URLSearchParams(window.location.search);
