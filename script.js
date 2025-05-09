@@ -17,10 +17,7 @@ const bgColor = document.getElementById("bgColor");
 const display = document.getElementById("messageDisplay");
 const themeMeta = document.getElementById("themeColorMeta");
 const gradientToggle = document.getElementById("gradientToggle");
-const controls = document.querySelector(".controls"); // wrap all inputs inside this
-
-const params = new URLSearchParams(window.location.search);
-const isViewOnly = params.get("viewOnly") === "true";
+const controls = document.querySelector(".controls");
 
 function saveState() {
   const state = {
@@ -36,67 +33,6 @@ function saveState() {
   localStorage.setItem("messageViewerState", JSON.stringify(state));
 }
 
-function loadState() {
-  if (params.has("message")) {
-    messageInput.value = params.get("message") || "";
-    fontSize.value = params.get("fontSize") || "24";
-    fontFamily.value = params.get("fontFamily") || "'Segoe UI', sans-serif";
-    boldToggle.checked = params.get("bold") === "true";
-    italicToggle.checked = params.get("italic") === "true";
-    textColor.value = params.get("textColor") || "#ffffff";
-    bgColor.value = params.get("bgColor") || "#000000";
-    gradientToggle.checked = params.get("gradient") === "true";
-  } else {
-    const saved = localStorage.getItem("messageViewerState");
-    if (!saved) return;
-    const state = JSON.parse(saved);
-    messageInput.value = state.text || "";
-    fontSize.value = state.fontSize || "24";
-    fontFamily.value = state.fontFamily || "'Segoe UI', sans-serif";
-    boldToggle.checked = state.bold || false;
-    italicToggle.checked = state.italic || false;
-    textColor.value = state.textColor || "#ffffff";
-    bgColor.value = state.bgColor || "#000000";
-    gradientToggle.checked = state.gradient || false;
-  }
-}
-
-function updateDisplay() {
-  const message = messageInput.value || 'Your message will appear here.';
-  const font = fontFamily.value;
-
-  display.style.fontFamily = font;
-  display.style.fontSize = fontSize.value + 'px';
-  display.style.fontWeight = boldToggle.checked ? 'bold' : 'normal';
-  display.style.fontStyle = italicToggle.checked ? 'italic' : 'normal';
-  display.style.backgroundColor = bgColor.value;
-  themeMeta.setAttribute('content', bgColor.value);
-  loadGoogleFont(font);
-
-  display.classList.remove('gradient-wave');
-  if (gradientToggle.checked) {
-    display.innerHTML = `<span class="gradient-wave">${message}</span>`;
-  } else {
-    display.textContent = message;
-    display.style.color = textColor.value;
-    display.style.webkitTextFillColor = textColor.value;
-  }
-
-  // Update URL
-  const url = new URL(window.location);
-  url.searchParams.set("message", messageInput.value);
-  url.searchParams.set("fontSize", fontSize.value);
-  url.searchParams.set("fontFamily", fontFamily.value);
-  url.searchParams.set("bold", boldToggle.checked);
-  url.searchParams.set("italic", italicToggle.checked);
-  url.searchParams.set("textColor", textColor.value);
-  url.searchParams.set("bgColor", bgColor.value);
-  url.searchParams.set("gradient", gradientToggle.checked);
-  if (isViewOnly) url.searchParams.set("viewOnly", "true");
-  else url.searchParams.delete("viewOnly");
-  window.history.replaceState({}, '', url);
-}
-
 function loadGoogleFont(fontValue) {
   const fontName = fontValue.match(/'([^']+)'/)?.[1];
   if (!fontName || document.getElementById(`gf-${fontName}`)) return;
@@ -107,48 +43,114 @@ function loadGoogleFont(fontValue) {
   document.head.appendChild(link);
 }
 
-function enterFullscreen() {
-  if (display.requestFullscreen)
-    display.requestFullscreen({ navigationUI: "hide" });
-  else if (display.webkitRequestFullscreen)
-    display.webkitRequestFullscreen();
-  else if (display.msRequestFullscreen)
-    display.msRequestFullscreen();
+function updateDisplay() {
+  const message = messageInput.value || "Your message will appear here.";
+  const font = fontFamily.value;
+
+  display.style.fontFamily = font;
+  display.style.fontSize = fontSize.value + "px";
+  display.style.fontWeight = boldToggle.checked ? "bold" : "normal";
+  display.style.fontStyle = italicToggle.checked ? "italic" : "normal";
+  display.style.backgroundColor = bgColor.value;
+  themeMeta.setAttribute("content", bgColor.value);
+  loadGoogleFont(font);
+
+  display.classList.remove("gradient-wave");
+  if (gradientToggle.checked) {
+    display.innerHTML = `<span class="gradient-wave">${message}</span>`;
+  } else {
+    display.textContent = message;
+    display.style.color = textColor.value;
+    display.style.webkitTextFillColor = textColor.value;
+  }
+
+  // Update URL with state
+  const newURL = new URL(window.location);
+  newURL.searchParams.set("message", messageInput.value);
+  newURL.searchParams.set("fontSize", fontSize.value);
+  newURL.searchParams.set("fontFamily", fontFamily.value);
+  newURL.searchParams.set("bold", boldToggle.checked);
+  newURL.searchParams.set("italic", italicToggle.checked);
+  newURL.searchParams.set("textColor", textColor.value);
+  newURL.searchParams.set("bgColor", bgColor.value);
+  newURL.searchParams.set("gradient", gradientToggle.checked);
+  window.history.replaceState({}, "", newURL);
 }
 
-function shareCurrentState() {
-  const url = new URL(window.location);
-  url.searchParams.set("message", messageInput.value);
-  url.searchParams.set("fontSize", fontSize.value);
-  url.searchParams.set("fontFamily", fontFamily.value);
-  url.searchParams.set("bold", boldToggle.checked);
-  url.searchParams.set("italic", italicToggle.checked);
-  url.searchParams.set("textColor", textColor.value);
-  url.searchParams.set("bgColor", bgColor.value);
-  url.searchParams.set("gradient", gradientToggle.checked);
-  url.searchParams.set("viewOnly", "true");
+function loadStateFromStorageOrURL() {
+  const params = new URLSearchParams(window.location.search);
+  const isViewOnly = params.get("viewOnly") === "true";
 
-  const shareURL = url.toString();
-
-  if (navigator.share) {
-    navigator.share({ title: "Pop-up Text", url: shareURL }).catch(console.error);
+  if (params.has("message")) {
+    // Load from URL
+    messageInput.value = params.get("message") || "";
+    fontSize.value = params.get("fontSize") || "24";
+    fontFamily.value = params.get("fontFamily") || "'Segoe UI', sans-serif";
+    boldToggle.checked = params.get("bold") === "true";
+    italicToggle.checked = params.get("italic") === "true";
+    textColor.value = params.get("textColor") || "#ffffff";
+    bgColor.value = params.get("bgColor") || "#000000";
+    gradientToggle.checked = params.get("gradient") === "true";
   } else {
-    navigator.clipboard.writeText(shareURL)
-      .then(() => alert("Link copied to clipboard!"))
-      .catch(err => alert("Could not copy link: " + err));
+    // Load from localStorage
+    const saved = localStorage.getItem("messageViewerState");
+    if (saved) {
+      const state = JSON.parse(saved);
+      messageInput.value = state.text || "";
+      fontSize.value = state.fontSize || "24";
+      fontFamily.value = state.fontFamily || "'Segoe UI', sans-serif";
+      boldToggle.checked = state.bold || false;
+      italicToggle.checked = state.italic || false;
+      textColor.value = state.textColor || "#ffffff";
+      bgColor.value = state.bgColor || "#000000";
+      gradientToggle.checked = state.gradient || false;
+    }
+  }
+
+  updateDisplay();
+
+  if (isViewOnly && controls) {
+    controls.style.display = "none";
   }
 }
 
-// Hide controls if in view-only mode
-if (isViewOnly && controls) controls.style.display = "none";
+function enterFullscreen() {
+  if (display.requestFullscreen) {
+    display.requestFullscreen({ navigationUI: "hide" });
+  } else if (display.webkitRequestFullscreen) {
+    display.webkitRequestFullscreen();
+  } else if (display.msRequestFullscreen) {
+    display.msRequestFullscreen();
+  }
+}
+
+function shareViewOnlyLink() {
+  const currentURL = new URL(window.location);
+  currentURL.searchParams.set("viewOnly", "true");
+  navigator.clipboard.writeText(currentURL.toString()).then(() => {
+    alert("Link copied to clipboard!");
+  }).catch(() => {
+    alert("Failed to copy the link.");
+  });
+}
+
+document.getElementById("fullscreenBtn").addEventListener("click", enterFullscreen);
+document.getElementById("shareBtn").addEventListener("click", shareViewOnlyLink);
 
 [
-  messageInput, fontSize, fontFamily, boldToggle, italicToggle,
-  textColor, bgColor, gradientToggle
-].forEach(el => el.addEventListener("input", () => {
-  updateDisplay();
-  saveState();
-}));
+  messageInput,
+  fontSize,
+  fontFamily,
+  boldToggle,
+  italicToggle,
+  textColor,
+  bgColor,
+  gradientToggle
+].forEach(el =>
+  el.addEventListener("input", () => {
+    updateDisplay();
+    saveState();
+  })
+);
 
-loadState();
-updateDisplay();
+loadStateFromStorageOrURL();
