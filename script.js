@@ -5,12 +5,24 @@ const boldToggle = document.getElementById("boldToggle");
 const italicToggle = document.getElementById("italicToggle");
 const textColor = document.getElementById("textColor");
 const bgColor = document.getElementById("bgColor");
+const gradientToggle = document.getElementById("gradientToggle");
 const display = document.getElementById("messageDisplay");
 const themeMeta = document.getElementById("themeColorMeta");
-const gradientToggle = document.getElementById("gradientToggle");
+const controls = document.querySelector(".controls");
 
 function saveState() {
-  const state = {
+  const state = getCurrentState();
+  localStorage.setItem("messageViewerState", JSON.stringify(state));
+}
+
+function loadStateFromLocalStorage() {
+  const saved = localStorage.getItem("messageViewerState");
+  if (!saved) return;
+  applyState(JSON.parse(saved));
+}
+
+function getCurrentState() {
+  return {
     text: messageInput.value,
     fontSize: fontSize.value,
     fontFamily: fontFamily.value,
@@ -20,16 +32,11 @@ function saveState() {
     bgColor: bgColor.value,
     gradient: gradientToggle.checked
   };
-  localStorage.setItem("messageViewerState", JSON.stringify(state));
 }
 
-function loadState() {
-  const saved = localStorage.getItem("messageViewerState");
-  if (!saved) return;
-  const state = JSON.parse(saved);
-
+function applyState(state) {
   messageInput.value = state.text || "";
-  fontSize.value = state.fontSize || "30";
+  fontSize.value = state.fontSize || "24";
   fontFamily.value = state.fontFamily || "'Segoe UI', sans-serif";
   boldToggle.checked = state.bold || false;
   italicToggle.checked = state.italic || false;
@@ -58,38 +65,11 @@ function updateDisplay() {
     display.style.webkitTextFillColor = textColor.value;
   }
 
-  updateURL();
-}
-
-function updateURL() {
-  const state = {
-    message: messageInput.value,
-    fontSize: fontSize.value,
-    fontFamily: fontFamily.value,
-    bold: boldToggle.checked ? 1 : 0,
-    italic: italicToggle.checked ? 1 : 0,
-    textColor: textColor.value,
-    bgColor: bgColor.value,
-    gradient: gradientToggle.checked ? 1 : 0
-  };
-
-  const params = new URLSearchParams(state);
-  const url = `${window.location.pathname}?${params.toString()}`;
-  window.history.replaceState({}, "", url);
-}
-
-function parseURLState() {
-  const params = new URLSearchParams(window.location.search);
-  if (!params.has("message")) return;
-
-  messageInput.value = params.get("message") || "";
-  fontSize.value = params.get("fontSize") || "30";
-  fontFamily.value = params.get("fontFamily") || "'Segoe UI', sans-serif";
-  boldToggle.checked = params.get("bold") === "1";
-  italicToggle.checked = params.get("italic") === "1";
-  textColor.value = params.get("textColor") || "#ffffff";
-  bgColor.value = params.get("bgColor") || "#000000";
-  gradientToggle.checked = params.get("gradient") === "1";
+  // Update URL without viewOnly
+  const newURL = new URL(window.location);
+  newURL.searchParams.set("state", btoa(encodeURIComponent(JSON.stringify(getCurrentState()))));
+  newURL.searchParams.delete("viewOnly");
+  window.history.replaceState({}, "", newURL);
 }
 
 function loadGoogleFont(fontValue) {
@@ -98,72 +78,75 @@ function loadGoogleFont(fontValue) {
   const link = document.createElement("link");
   link.id = `gf-${fontName}`;
   link.rel = "stylesheet";
-  link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(
-    / /g,
-    "+"
-  )}&display=swap`;
+  link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}&display=swap`;
   document.head.appendChild(link);
 }
 
 function enterFullscreen() {
-  if (display.requestFullscreen) {
-    display.requestFullscreen({ navigationUI: "hide" });
-  } else if (display.webkitRequestFullscreen) {
-    display.webkitRequestFullscreen();
-  } else if (display.msRequestFullscreen) {
-    display.msRequestFullscreen();
-  }
+  if (display.requestFullscreen) display.requestFullscreen({ navigationUI: "hide" });
+  else if (display.webkitRequestFullscreen) display.webkitRequestFullscreen();
+  else if (display.msRequestFullscreen) display.msRequestFullscreen();
 }
 
 function shareCurrentState() {
-  const state = {
-    text: messageInput.value,
-    fontSize: fontSize.value,
-    fontFamily: fontFamily.value,
-    bold: boldToggle.checked,
-    italic: italicToggle.checked,
-    textColor: textColor.value,
-    bgColor: bgColor.value,
-    gradient: gradientToggle.checked
-  };
-
-  const encoded = encodeURIComponent(btoa(JSON.stringify(state)));
+  const state = getCurrentState();
+  const encoded = btoa(encodeURIComponent(JSON.stringify(state)));
   const shareURL = `${location.origin}${location.pathname}?state=${encoded}&viewOnly=1`;
 
   if (navigator.share) {
-    navigator
-      .share({
-        title: 'Pop-Up Text',
-        text: 'Check out this message!',
-        url: shareURL
-      })
-      .catch(err => console.warn('Share canceled or failed', err));
+    navigator.share({
+      title: "Pop-Up Text",
+      text: "Check out this message!",
+      url: shareURL
+    }).catch(err => console.warn("Share canceled or failed", err));
   } else {
     navigator.clipboard.writeText(shareURL).then(() => {
-      alert('Link copied to clipboard!');
+      alert("Link copied to clipboard!");
     });
   }
 }
 
+// Load state from URL if available
+(function loadFromURL() {
+  const params = new URLSearchParams(location.search);
+  const encoded = params.get("state");
+  const viewOnly = params.get("viewOnly") === "1";
 
-function checkViewOnly() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("viewOnly") === "1") {
-    document.querySelector(".controls").style.display = "none";
+  if (encoded) {
+    try {
+      const decoded = decodeURIComponent(atob(encoded));
+      const state = JSON.parse(decoded);
+      applyState(state);
+    } catch (e) {
+      console.error("Invalid URL state", e);
+    }
+  } else {
+    loadStateFromLocalStorage();
   }
-}
 
-[messageInput, fontSize, fontFamily, boldToggle, italicToggle, textColor, bgColor, gradientToggle].forEach((el) => {
+  updateDisplay();
+
+  if (viewOnly) {
+    controls.style.display = "none";
+  }
+})();
+
+[
+  messageInput,
+  fontSize,
+  fontFamily,
+  boldToggle,
+  italicToggle,
+  textColor,
+  bgColor,
+  gradientToggle
+].forEach(el =>
   el.addEventListener("input", () => {
     updateDisplay();
     saveState();
-  });
-});
+  })
+);
 
-parseURLState();
-loadState();
-checkViewOnly();
-updateDisplay();
 
 
 if ('serviceWorker' in navigator) {
