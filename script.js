@@ -1,12 +1,3 @@
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/pop/service-worker.js")
-      .then((reg) => console.log("Service Worker registered", reg))
-      .catch((err) => console.log("Service Worker failed", err));
-  });
-}
-
 const messageInput = document.getElementById("messageInput");
 const fontSize = document.getElementById("fontSize");
 const fontFamily = document.getElementById("fontFamily");
@@ -17,7 +8,6 @@ const bgColor = document.getElementById("bgColor");
 const display = document.getElementById("messageDisplay");
 const themeMeta = document.getElementById("themeColorMeta");
 const gradientToggle = document.getElementById("gradientToggle");
-const controls = document.querySelector(".controls");
 
 function saveState() {
   const state = {
@@ -33,20 +23,24 @@ function saveState() {
   localStorage.setItem("messageViewerState", JSON.stringify(state));
 }
 
-function loadGoogleFont(fontValue) {
-  const fontName = fontValue.match(/'([^']+)'/)?.[1];
-  if (!fontName || document.getElementById(`gf-${fontName}`)) return;
-  const link = document.createElement("link");
-  link.id = `gf-${fontName}`;
-  link.rel = "stylesheet";
-  link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}&display=swap`;
-  document.head.appendChild(link);
+function loadState() {
+  const saved = localStorage.getItem("messageViewerState");
+  if (!saved) return;
+  const state = JSON.parse(saved);
+
+  messageInput.value = state.text || "";
+  fontSize.value = state.fontSize || "30";
+  fontFamily.value = state.fontFamily || "'Segoe UI', sans-serif";
+  boldToggle.checked = state.bold || false;
+  italicToggle.checked = state.italic || false;
+  textColor.value = state.textColor || "#ffffff";
+  bgColor.value = state.bgColor || "#000000";
+  gradientToggle.checked = state.gradient || false;
 }
 
 function updateDisplay() {
   const message = messageInput.value || "Your message will appear here.";
   const font = fontFamily.value;
-
   display.style.fontFamily = font;
   display.style.fontSize = fontSize.value + "px";
   display.style.fontWeight = boldToggle.checked ? "bold" : "normal";
@@ -64,54 +58,51 @@ function updateDisplay() {
     display.style.webkitTextFillColor = textColor.value;
   }
 
-  // Update URL with state
-  const newURL = new URL(window.location);
-  newURL.searchParams.set("message", messageInput.value);
-  newURL.searchParams.set("fontSize", fontSize.value);
-  newURL.searchParams.set("fontFamily", fontFamily.value);
-  newURL.searchParams.set("bold", boldToggle.checked);
-  newURL.searchParams.set("italic", italicToggle.checked);
-  newURL.searchParams.set("textColor", textColor.value);
-  newURL.searchParams.set("bgColor", bgColor.value);
-  newURL.searchParams.set("gradient", gradientToggle.checked);
-  window.history.replaceState({}, "", newURL);
+  updateURL();
 }
 
-function loadStateFromStorageOrURL() {
+function updateURL() {
+  const state = {
+    message: messageInput.value,
+    fontSize: fontSize.value,
+    fontFamily: fontFamily.value,
+    bold: boldToggle.checked ? 1 : 0,
+    italic: italicToggle.checked ? 1 : 0,
+    textColor: textColor.value,
+    bgColor: bgColor.value,
+    gradient: gradientToggle.checked ? 1 : 0
+  };
+
+  const params = new URLSearchParams(state);
+  const url = `${window.location.pathname}?${params.toString()}`;
+  window.history.replaceState({}, "", url);
+}
+
+function parseURLState() {
   const params = new URLSearchParams(window.location.search);
-  const isViewOnly = params.get("viewOnly") === "true";
+  if (!params.has("message")) return;
 
-  if (params.has("message")) {
-    // Load from URL
-    messageInput.value = params.get("message") || "";
-    fontSize.value = params.get("fontSize") || "24";
-    fontFamily.value = params.get("fontFamily") || "'Segoe UI', sans-serif";
-    boldToggle.checked = params.get("bold") === "true";
-    italicToggle.checked = params.get("italic") === "true";
-    textColor.value = params.get("textColor") || "#ffffff";
-    bgColor.value = params.get("bgColor") || "#000000";
-    gradientToggle.checked = params.get("gradient") === "true";
-  } else {
-    // Load from localStorage
-    const saved = localStorage.getItem("messageViewerState");
-    if (saved) {
-      const state = JSON.parse(saved);
-      messageInput.value = state.text || "";
-      fontSize.value = state.fontSize || "24";
-      fontFamily.value = state.fontFamily || "'Segoe UI', sans-serif";
-      boldToggle.checked = state.bold || false;
-      italicToggle.checked = state.italic || false;
-      textColor.value = state.textColor || "#ffffff";
-      bgColor.value = state.bgColor || "#000000";
-      gradientToggle.checked = state.gradient || false;
-    }
-  }
+  messageInput.value = params.get("message") || "";
+  fontSize.value = params.get("fontSize") || "30";
+  fontFamily.value = params.get("fontFamily") || "'Segoe UI', sans-serif";
+  boldToggle.checked = params.get("bold") === "1";
+  italicToggle.checked = params.get("italic") === "1";
+  textColor.value = params.get("textColor") || "#ffffff";
+  bgColor.value = params.get("bgColor") || "#000000";
+  gradientToggle.checked = params.get("gradient") === "1";
+}
 
-  updateDisplay();
-
-  if (isViewOnly && controls) {
-    controls.style.display = "none";
-  }
+function loadGoogleFont(fontValue) {
+  const fontName = fontValue.match(/'([^']+)'/)?.[1];
+  if (!fontName || document.getElementById(`gf-${fontName}`)) return;
+  const link = document.createElement("link");
+  link.id = `gf-${fontName}`;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(
+    / /g,
+    "+"
+  )}&display=swap`;
+  document.head.appendChild(link);
 }
 
 function enterFullscreen() {
@@ -124,33 +115,40 @@ function enterFullscreen() {
   }
 }
 
-function shareViewOnlyLink() {
-  const currentURL = new URL(window.location);
-  currentURL.searchParams.set("viewOnly", "true");
-  navigator.clipboard.writeText(currentURL.toString()).then(() => {
+function shareCurrentState() {
+  const params = new URLSearchParams(window.location.search);
+  params.set("viewOnly", "1");
+  const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  navigator.clipboard.writeText(shareUrl).then(() => {
     alert("Link copied to clipboard!");
-  }).catch(() => {
-    alert("Failed to copy the link.");
   });
 }
 
-document.getElementById("fullscreenBtn").addEventListener("click", enterFullscreen);
-document.getElementById("shareBtn").addEventListener("click", shareViewOnlyLink);
+function checkViewOnly() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("viewOnly") === "1") {
+    document.querySelector(".controls").style.display = "none";
+  }
+}
 
-[
-  messageInput,
-  fontSize,
-  fontFamily,
-  boldToggle,
-  italicToggle,
-  textColor,
-  bgColor,
-  gradientToggle
-].forEach(el =>
+[messageInput, fontSize, fontFamily, boldToggle, italicToggle, textColor, bgColor, gradientToggle].forEach((el) => {
   el.addEventListener("input", () => {
     updateDisplay();
     saveState();
-  })
-);
+  });
+});
 
-loadStateFromStorageOrURL();
+parseURLState();
+loadState();
+checkViewOnly();
+updateDisplay();
+
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/pop/service-worker.js')
+      .then(reg => console.log('Service Worker registered:', reg.scope))
+      .catch(err => console.error('Service Worker registration failed:', err));
+  });
+}
