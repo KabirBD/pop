@@ -96,7 +96,6 @@ function shareCurrentState() {
   if (navigator.share) {
     navigator.share({
       title: "Pop-Up Text",
-      text: "Check out this message!",
       url: shareURL
     }).catch(err => console.warn("Share canceled or failed", err));
   } else {
@@ -157,3 +156,4 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.error('Service Worker registration failed:', err));
   });
 }
+
